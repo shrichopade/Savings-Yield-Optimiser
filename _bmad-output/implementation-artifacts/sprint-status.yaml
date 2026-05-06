@@ -1,0 +1,55 @@
+# generated: 2026-05-06T08:33:00Z
+# last_updated: 2026-05-06T08:33:00Z
+# project: Savings-Yield-Optimiser
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-05-06T08:33:00Z
+last_updated: 2026-05-06T09:16:00Z
+project: Savings-Yield-Optimiser
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  epic-1: done
+  1-1-add-sqlite-schema-bootstrap: done
+  1-2-python-backend-skeleton-local-data-management: done
+  1-3-seed-data-loader-local-json-csv-sqlite: done
+  1-4-table-query-endpoints-fixed-savings-cash-isa: done
+  1-5-react-app-scaffold-routing: done
+  1-6-react-table-ui-mvp-fields: done
+  1-7-filters-ui-api-wiring: done
+  1-8-basic-styling-accessibility-pass: done
+  epic-1-retrospective: optional
+

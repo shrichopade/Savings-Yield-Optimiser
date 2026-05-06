@@ -1,0 +1,121 @@
+{
+  "as_of": "2026-05-06T08:00:00Z",
+  "providers": [
+    {
+      "name": "Example Bank",
+      "provider_type": "bank",
+      "fscs_protected": true,
+      "products": [
+        {
+          "name": "1 Year Fixed Saver",
+          "product_type": "fixed_savings",
+          "offers": [
+            {
+              "category": "fixed_savings",
+              "term_months": 12,
+              "isa_subtype": "",
+              "status": "active",
+              "snapshot": {
+                "verified_at": "2026-05-06T08:00:00Z",
+                "aer_percent": 5.15,
+                "rate_type": "fixed",
+                "payout_frequency": "annual",
+                "min_opening_deposit_gbp": 1000,
+                "max_balance_gbp": 250000,
+                "withdrawals_allowed": false,
+                "early_closure_allowed": true,
+                "penalty_model_text": "90 days' interest",
+                "new_customer_only": false,
+                "new_money_required": false,
+                "uk_residency_required": true,
+                "open_method": "online",
+                "managed_via": "online"
+              },
+              "sources": [
+                {
+                  "url": "https://example.com/example-bank/1y-fixed-saver",
+                  "source_type": "provider_page"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Example Building Society",
+      "provider_type": "building_society",
+      "fscs_protected": true,
+      "products": [
+        {
+          "name": "Easy Access Cash ISA",
+          "product_type": "cash_isa",
+          "offers": [
+            {
+              "category": "cash_isa_easy_access",
+              "term_months": -1,
+              "isa_subtype": "easy_access",
+              "status": "active",
+              "snapshot": {
+                "verified_at": "2026-05-06T08:00:00Z",
+                "aer_percent": 4.62,
+                "rate_type": "variable",
+                "is_flexible_isa": true,
+                "transfer_in_supported": true,
+                "partial_transfers_allowed": true,
+                "payout_frequency": "annual",
+                "min_opening_deposit_gbp": 1,
+                "max_balance_gbp": 1000000,
+                "withdrawals_allowed": true,
+                "new_customer_only": false,
+                "new_money_required": false,
+                "uk_residency_required": true,
+                "eligibility_notes": "Must be a UK resident aged 16+.",
+                "open_method": "app",
+                "managed_via": "app"
+              },
+              "sources": [
+                {
+                  "url": "https://example.com/example-bs/easy-access-cash-isa",
+                  "source_type": "provider_page"
+                }
+              ]
+            },
+            {
+              "category": "cash_isa_fixed",
+              "term_months": 12,
+              "isa_subtype": "fixed",
+              "status": "active",
+              "snapshot": {
+                "verified_at": "2026-05-06T08:00:00Z",
+                "aer_percent": 4.95,
+                "rate_type": "fixed",
+                "payout_frequency": "at_maturity",
+                "min_opening_deposit_gbp": 500,
+                "max_balance_gbp": 250000,
+                "funding_window_days": 14,
+                "withdrawals_allowed": false,
+                "early_closure_allowed": true,
+                "penalty_model_text": "180 days' interest",
+                "transfer_in_supported": true,
+                "partial_transfers_allowed": false,
+                "is_flexible_isa": false,
+                "new_customer_only": true,
+                "uk_residency_required": true,
+                "open_method": "online",
+                "managed_via": "online"
+              },
+              "sources": [
+                {
+                  "url": "https://example.com/example-bs/1y-fixed-cash-isa",
+                  "source_type": "provider_page"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
