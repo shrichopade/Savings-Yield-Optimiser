@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
 function App() {
+  // Top-level layout: header navigation + the current page (Outlet).
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800">

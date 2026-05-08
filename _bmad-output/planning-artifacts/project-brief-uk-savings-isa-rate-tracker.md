@@ -30,6 +30,16 @@ Show the user **ranked lists** of products that are *actually comparable*, with 
 ### 5.1 Rate discovery & catalog
 - **Product database**: structured records per product with full terms metadata (see Section 7).
 - **Source traceability**: store source URL(s), last-checked timestamp, and change history for each product/rate.
+- **Automated data collection (agentic freshness)**:
+  - **Primary targets (phase 1)**: UK savings comparison / editorial-aggregation sites such as **Moneyfacts** and **MoneySavingExpert** (and similar), used to discover and monitor rate movements quickly.
+  - **Source-of-truth policy**: comparison sites are used for *discovery + monitoring*; whenever feasible, persist a link to the **provider’s official product page** and treat it as the authoritative reference for terms that materially affect comparability (penalties, eligibility, funding windows, transfer rules).
+  - **Fetch cadence** (MVP recommendation):
+    - Run a scheduled scrape **every 6 hours** (4×/day) for target comparison pages (keeps the app “agentic” without over-polling).
+    - Add a **daily** (1×/day) “full refresh” job that re-validates active products and marks withdrawn/removed items.
+    - Allow an **on-demand** manual refresh (admin-only) for debugging and rapid verification after schema or parser changes.
+  - **Freshness SLA surfaced in UI**:
+    - Show “Last checked” timestamps per table/category.
+    - Target **median freshness ≤ 6 hours** for tracked categories; flag if last check exceeds **24 hours**.
 - **Update workflow**:
   - Detect changes (rate/terms) and mark products as updated.
   - Handle withdrawals/closures: preserve history; mark as unavailable.
@@ -163,12 +173,14 @@ Every ranked list must show:
 
 ## 10) Success metrics
 - **Coverage**: % of top providers/products in target categories captured.
-- **Freshness**: median time from provider change → tracker update.
+- **Freshness**: median time from change detected on monitored sources → tracker update (target ≤ 6 hours).
 - **User utility**: clicks to provider, shortlist creation, alert subscriptions.
 - **Accuracy**: low rate of user-reported incorrect terms; audit pass rate.
 
 ## 11) Risks & open questions
 - **Data accuracy & maintenance**: rate pages change formats; need robust monitoring and verification.
+- **Scraping reliability & compliance**: robots.txt / ToS constraints, rate limits, and page format drift require resilient extraction and fallbacks.
+- **Aggregator vs provider mismatch**: comparison sites may lag or simplify terms; need an explicit policy for reconciling conflicts and marking uncertain fields as “unknown” rather than guessing.
 - **FSCS grouping complexity**: brands share licenses; may require curated mapping.
 - **ISA rule nuance**: transfer/partial transfer rules vary and can be confusing; must be carefully sourced.
 - Open questions to resolve early:

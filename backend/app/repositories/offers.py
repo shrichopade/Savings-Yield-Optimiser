@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# offers.py — SQL queries that power the “tables” shown in the frontend
+# This file reads from SQLite and returns plain dictionaries for API responses.
+
 from dataclasses import dataclass
 from typing import Any, Iterable
 
@@ -15,12 +18,18 @@ class OfferQuery:
 
 
 def _to_bool(value: Any) -> bool | None:
+    # Convert SQLite-style 0/1/NULL values into Python booleans.
+    # Inputs: any value (often int-like or None).
+    # Returns: True/False/None.
     if value is None:
         return None
     return bool(int(value))
 
 
 def _badges_from_row(row: sqlite3.Row) -> list[str]:
+    # Build a simple list of “badges” the UI can display (e.g., restricted/bonus/conditional).
+    # Inputs: one SQLite row representing an offer.
+    # Returns: list of short badge identifiers.
     badges: list[str] = []
     if row["is_conditional_rate"] == 1:
         badges.append("conditional_rate")
@@ -42,7 +51,13 @@ def _badges_from_row(row: sqlite3.Row) -> list[str]:
 
 
 def fetch_table_rows(conn: sqlite3.Connection, q: OfferQuery) -> list[dict[str, Any]]:
-    # Uses current_snapshot_id pointer to ensure “current tables”.
+    # Fetch rows for a specific table (category + optional term) with optional filters.
+    # Inputs:
+    # - conn: open SQLite connection
+    # - q: OfferQuery containing table scope + filters
+    # Returns: list of dictionaries (each dictionary is one table row for the frontend).
+    #
+    # Important: we join via product_offer.current_snapshot_id so we only return “current” snapshots.
     params: dict[str, Any] = {"category": q.category}
 
     where: list[str] = [
@@ -52,10 +67,9 @@ def fetch_table_rows(conn: sqlite3.Connection, q: OfferQuery) -> list[dict[str, 
     ]
 
     if q.category in ("fixed_savings", "cash_isa_fixed"):
-        if q.term_months is None:
-            raise ValueError("term_months required for fixed categories")
-        params["term_months"] = q.term_months
-        where.append("po.term_months = :term_months")
+        if q.term_months is not None:
+            params["term_months"] = q.term_months
+            where.append("po.term_months = :term_months")
 
     if q.deposit_gbp is not None:
         params["deposit_gbp"] = q.deposit_gbp
@@ -120,6 +134,7 @@ def fetch_table_rows(conn: sqlite3.Connection, q: OfferQuery) -> list[dict[str, 
 
     result: list[dict[str, Any]] = []
     for row in rows:
+        # Convert from SQLite row objects into plain Python types for FastAPI/Pydantic.
         result.append(
             {
                 "offer_id": int(row["offer_id"]),

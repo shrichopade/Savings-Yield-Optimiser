@@ -1,5 +1,6 @@
 # Epic-1 : Foundation — SQLite database + basic React tables
-# List of BMAD Prompts
+
+# List of BMAD Prompts 
 
 This document enlists the list of prompts fed into BMAD Framework.
 

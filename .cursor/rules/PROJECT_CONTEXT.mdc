@@ -1,0 +1,38 @@
+---
+description: Savings Yield Optimiser project context (stack, commands, conventions)
+alwaysApply: true
+---
+
+## Project: Savings Yield Optimiser
+
+### Stack
+- **Frontend**: React + TypeScript (Vite) in `frontend/`
+- **Backend**: FastAPI in `backend/`
+- **DB**: SQLite at `data/app.db` (schema: `backend/sql/schema.sql`)
+- **Scraping**: Firecrawl → JSON extraction → SQLite upsert pipeline
+
+### Key backend modules
+- **App entry**: `backend/app/main.py`
+- **Public table APIs**: `backend/app/routes/tables.py`
+- **Admin refresh APIs**: `backend/app/routes/admin_refresh.py` (prefix `/admin`)
+- **Refresh orchestration**: `backend/app/services/refresh_scheduler.py`
+- **SQLite upsert logic**: `backend/app/services/scraped_rate_ingestion.py`
+
+### API conventions (important)
+- `term_months=0` means **All terms** (backend maps to `None` internally).
+- “Last checked” == `offer_snapshot.verified_at` (current snapshot).
+- Admin endpoints require header `X-Admin-Token`.
+
+### Environment variables (repo root `.env`)
+- `FIRECRAWL_API_KEY` (required for live scraping)
+- `ADMIN_TOKEN` (required for `/admin/*`)
+- `REFRESH_SCHEDULER_ENABLED=0|1`
+- `REFRESH_INTERVAL_HOURS` (default `6`)
+- `REFRESH_TARGETS_JSON` (optional override targets list)
+
+### Common commands (Windows / PowerShell)
+- Backend deps: `.\.venv\Scripts\python -m pip install -r backend\requirements.txt`
+- Init DB: `.\.venv\Scripts\python -m backend.app.cli.init_db`
+- Run API: `.\.venv\Scripts\python -m uvicorn backend.app.main:app --reload`
+- Run UI: `cd frontend; npm install; npm run dev`
+- Tests: `.\.venv\Scripts\python -m pytest -q`

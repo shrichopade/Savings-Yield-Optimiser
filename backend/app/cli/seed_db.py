@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# seed_db.py — CLI helper to populate SQLite with sample “known good” offers
+# This is useful for demoing the UI without scraping live sites.
+
 import json
 from pathlib import Path
 from typing import Any
@@ -9,12 +12,18 @@ from backend.app.settings import get_settings
 
 
 def _bool_to_int(value: bool | None) -> int | None:
+    # Convert a Python bool into SQLite 1/0 (or None if unknown).
+    # Inputs: True/False/None.
+    # Returns: 1/0/None.
     if value is None:
         return None
     return 1 if value else 0
 
 
 def _upsert_provider(cur, provider: dict[str, Any]) -> int:
+    # Insert or update a provider row and return its provider_id.
+    # Inputs: SQLite cursor and a provider dict from the seed JSON.
+    # Returns: provider_id integer.
     cur.execute(
         """
         INSERT INTO provider (name, provider_type, fscs_protected)
@@ -35,6 +44,9 @@ def _upsert_provider(cur, provider: dict[str, Any]) -> int:
 
 
 def _upsert_product(cur, provider_id: int, product: dict[str, Any]) -> int:
+    # Insert or update a product row under a provider.
+    # Inputs: cursor, provider_id, and product dict from seed JSON.
+    # Returns: product_id integer.
     cur.execute(
         """
         INSERT INTO product (provider_id, name, product_type)
@@ -49,6 +61,9 @@ def _upsert_product(cur, provider_id: int, product: dict[str, Any]) -> int:
 
 
 def _upsert_offer(cur, product_id: int, offer: dict[str, Any]) -> int:
+    # Insert or update a stable offer (category/term/subtype) for a product.
+    # Inputs: cursor, product_id, and offer dict from seed JSON.
+    # Returns: offer_id integer.
     cur.execute(
         """
         INSERT INTO product_offer (product_id, category, term_months, isa_subtype, status)
@@ -70,11 +85,16 @@ def _upsert_offer(cur, product_id: int, offer: dict[str, Any]) -> int:
 
 
 def _insert_snapshot(cur, offer_id: int, snapshot: dict[str, Any]) -> int:
-    # Keep it minimal: insert only known keys; unknown keys are ignored.
+    # Insert a snapshot row (an observation at a point in time) for an offer.
+    # Inputs: cursor, offer_id, and snapshot dict from seed JSON.
+    # Returns: snapshot_id integer.
+    #
+    # We only write known keys to keep the seed file flexible.
     columns: list[str] = ["offer_id", "verified_at"]
     values: list[Any] = [offer_id, snapshot["verified_at"]]
 
     def add(col: str, val: Any) -> None:
+        # Helper to build the INSERT column/value lists safely.
         columns.append(col)
         values.append(val)
 
@@ -171,6 +191,9 @@ def _insert_snapshot(cur, offer_id: int, snapshot: dict[str, Any]) -> int:
 
 
 def _upsert_source(cur, source: dict[str, Any]) -> int:
+    # Insert or update a source URL (where we got the information from).
+    # Inputs: cursor and a source dict from seed JSON.
+    # Returns: source_id integer.
     cur.execute(
         """
         INSERT INTO source (url, source_type)
@@ -185,6 +208,9 @@ def _upsert_source(cur, source: dict[str, Any]) -> int:
 
 
 def _link_snapshot_source(cur, snapshot_id: int, source_id: int) -> None:
+    # Connect a snapshot to a source URL (traceability link).
+    # Inputs: snapshot_id and source_id.
+    # Returns: nothing.
     cur.execute(
         """
         INSERT OR IGNORE INTO snapshot_source (snapshot_id, source_id)
@@ -195,6 +221,9 @@ def _link_snapshot_source(cur, snapshot_id: int, source_id: int) -> None:
 
 
 def seed_from_file(seed_path: Path) -> None:
+    # Read a JSON seed file and insert its providers/products/offers into SQLite.
+    # Inputs: seed_path (path to JSON file).
+    # Returns: nothing (prints a success message).
     settings = get_settings()
     payload = json.loads(seed_path.read_text(encoding="utf-8"))
 
@@ -233,6 +262,8 @@ def seed_from_file(seed_path: Path) -> None:
 
 
 def main() -> None:
+    # Default entrypoint that seeds using backend/seed/sample-uk-rates.json.
+    # Returns: nothing.
     repo_root = Path(__file__).resolve().parents[3]
     default_seed = repo_root / "backend" / "seed" / "sample-uk-rates.json"
     seed_from_file(default_seed)

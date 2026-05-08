@@ -12,6 +12,7 @@ Rates and terms change frequently, and “best” depends on term, deposit limit
 - Enable users to **filter by deposit, term, and eligibility** so results are actionable.
 - Surface critical **constraints/gotchas** (bonus expiry, penalties, ISA transfer rules) directly in the table.
 - Show **sources** and “last checked” timestamps to build trust.
+- Keep rates **agentically fresh** via automated scraping + a background refresh cadence, with an admin on-demand refresh for verification.
 
 ### 1.4 Non-goals (MVP)
 - Stocks & Shares ISA / Lifetime ISA
@@ -98,9 +99,18 @@ Each product row must expose (in-row badges + details panel):
 ### FR8 — Source traceability & freshness
 - Every product record stores:
   - source URL(s)
-  - last verified timestamp
+  - last verified (“last checked”) timestamp
   - status (active/withdrawn/unknown)
 - UI shows **“Last checked”** per product and a page-level “data last updated”.
+
+### FR10 — Automated data collection (Firecrawl) + refresh controls
+- The system must support automated collection of rates/terms from UK financial comparison/editorial-aggregation pages using **Firecrawl** (e.g., Moneyfacts / MoneySavingExpert category pages) to discover and monitor rate movements.
+- The system must maintain a **source-of-truth hierarchy**:
+  - Comparison sites are used for discovery/monitoring and to link users out.
+  - Whenever feasible, store and prefer the **provider’s official product page** as the authoritative source for terms that affect comparability (penalties, eligibility, funding windows, ISA transfer rules).
+- The system must run a background refresh job on a **6-hour cadence** (4×/day) for monitored comparison pages.
+- The system must run a **daily full refresh** job that re-validates active products and marks withdrawn/removed items.
+- The UI must include an **admin-only** control to trigger an **on-demand refresh** (manual scrape run) and surface job status (started/running/succeeded/failed) at least in basic form.
 
 ### FR9 — Alerts (MVP-light)
 - Users can create an alert for:
@@ -113,6 +123,7 @@ Each product row must expose (in-row badges + details panel):
 - **Performance**: tables load in < 2s for typical usage.
 - **Auditability**: each displayed data point must map to a stored field with a source reference.
 - **Accessibility**: tables navigable via keyboard; screen-reader-friendly labels.
+- **Operational safety**: background refresh must be idempotent, rate-limited, and resilient to source page format changes (fail gracefully; never corrupt existing known-good data).
 
 ## 6) UX requirements (table behaviours)
 - Default sort: **AER desc**.
@@ -204,12 +215,20 @@ Store enough data to support honest ranking and comparison.
   - Acceptance:
     - A visible statement explains ranking basis and comparability constraints.
 
+### 8.4 Admin stories (Epic 2 enablement)
+- **US-ADMIN-01 (On-demand refresh)**: As an admin, I want a button to trigger an on-demand refresh so I can validate new parsers/sources and force an update after known rate moves.
+  - Acceptance:
+    - Control is not visible to non-admin users.
+    - Trigger returns an acknowledgement and basic job status (e.g., queued/running/succeeded/failed).
+    - A subsequent table visit reflects updated “last checked” timestamps after a successful run.
+
 ## 9) Assumptions
-- Data sources are primarily **provider product pages**; all values must link back to a source URL.
+- Automated scraping will use **Firecrawl** for monitored comparison/editorial-aggregation pages.
+- Source-of-truth preference is **provider product pages** (when available), with comparison sites used for discovery/monitoring and link-out.
+- All displayed values must link back to at least one stored source URL.
 - MVP can start with a limited provider set as long as the schema + ranking logic are correct.
 
 ## 10) Open questions
-- What is the target update cadence for “last checked” (daily vs more frequent)?
 - Do we include notice ISAs in MVP or phase 2?
 - Do we support payout frequency filtering in MVP (depends on data availability)?
 

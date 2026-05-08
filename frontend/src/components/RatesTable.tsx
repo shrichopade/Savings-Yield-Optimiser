@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchTable, type TableRow } from '../lib/api'
 
+// RatesTable.tsx — reusable table component that fetches rows from the backend
+// It shows loading/error states and renders a simple table of offers.
+
 type Props = {
   title: string
   endpointPath: string
@@ -14,22 +17,34 @@ const gbp = new Intl.NumberFormat('en-GB', {
 })
 
 function formatAer(aer: number | null) {
+  // Convert a numeric AER into user-friendly text (or a dash if unknown).
+  // Inputs: aer (number or null).
+  // Returns: formatted string like "4.25%".
   if (aer === null) return '—'
   return `${aer.toFixed(2)}%`
 }
 
 function formatTerm(termMonths: number | null) {
+  // Convert a term in months into user-friendly text.
+  // Inputs: termMonths (number or null).
+  // Returns: formatted string like "12 mo" or "—".
   if (termMonths === null) return '—'
   if (termMonths === -1) return '—'
   return `${termMonths} mo`
 }
 
 function formatGbp(value: number | null | undefined) {
+  // Format a number as GBP currency (or a dash if unknown).
+  // Inputs: value (number, null, or undefined).
+  // Returns: formatted string like "£5,000".
   if (value === null || value === undefined) return '—'
   return gbp.format(value)
 }
 
 export function RatesTable({ title, endpointPath, params }: Props) {
+  // Fetch and display a rates table.
+  // Inputs: endpointPath + params (used to call the backend).
+  // Returns: a React component section.
   const [items, setItems] = useState<TableRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -39,6 +54,7 @@ export function RatesTable({ title, endpointPath, params }: Props) {
   ])
 
   useEffect(() => {
+    // Whenever endpointPath/params change, re-fetch the table data.
     let cancelled = false
     setItems(null)
     setError(null)
@@ -54,6 +70,7 @@ export function RatesTable({ title, endpointPath, params }: Props) {
       })
 
     return () => {
+      // Prevent setting state if the component unmounts while the request is still in-flight.
       cancelled = true
     }
   }, [stableKey, endpointPath, params])

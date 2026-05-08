@@ -8,7 +8,7 @@
 
 ## 2) High-level system shape
 ### 2.1 Components
-- **Ingestion** (offline job / CLI): fetch provider pages (or other approved sources), parse into normalized records, validate, then upsert into SQLite.
+- **Scraper service** (Firecrawl-powered ingestion): fetch + extract content from approved UK financial comparison/editorial-aggregation pages (e.g., Moneyfacts, MoneySavingExpert) and (where feasible) provider product pages, normalize into “offer observations”, validate, then upsert into SQLite.
 - **Query API** (local Python backend): read-only endpoints for:
   - fixed savings table (by term bucket)
   - easy access cash ISA table
@@ -16,9 +16,11 @@
   - product details (includes sources + history)
 - **Ranking service**: implements comparability and tie-breakers; produces “why ranked” metadata.
 - **Alert evaluator** (phase 1-lite): runs after ingestion to detect “better rate appeared” or watched product changed.
+- **Scheduler / job runner**: a background process that runs the refresh cadence (every 6 hours + daily full refresh) and records job status.
 
 ### 2.2 Data flow
-1. Ingestion produces an **Observation** for a product offer at time \(t\).
+1. Scraper service uses **Firecrawl** to retrieve and extract content for monitored pages.
+2. Scraper service produces an **Observation** for a product offer at time \(t\).
 2. Observation is persisted as an immutable **offer_snapshot** row.
 3. A **product_offer.current_snapshot_id** pointer is updated to the latest valid snapshot.
 4. Query layer reads **current snapshots** (or historical snapshots when requested), applies filters + ranking, returns table rows.
@@ -153,6 +155,78 @@ Set SQLite pragmas on connect:
 - `GET /tables/cash-isa/easy-access?deposit_gbp=2000&exclude_restricted=true`
 - `GET /tables/cash-isa/fixed?term_months=12&deposit_gbp=2000&exclude_restricted=true`
 - `GET /offers/{offer_id}` (current snapshot + sources + (optional) history)
+
+### 5.5 Scraper service (Firecrawl) — design
+#### 5.5.1 Responsibilities
+- **Target selection**:
+  - Phase 1: monitor a small set of comparison/editorial-aggregation pages for each table category/term bucket.
+  - When feasible, also capture and persist **provider product page URLs** for authoritative terms.
+- **Extraction**:
+  - Use **Firecrawl** for retrieval + extraction (HTML → structured content).
+  - Parse extracted content into the canonical observation model used by the existing ingestion pipeline.
+- **Validation & persistence**:
+  - Perform strict validation before DB write (bounds checks, term/category required fields).
+  - Upsert offer identity (`provider` / `product` / `product_offer`) and insert immutable `offer_snapshot` rows.
+
+#### 5.5.2 Source-of-truth hierarchy (how we store Last Checked + Source URLs)
+The current schema already supports this requirement:
+- **“Last Checked”**:
+  - Stored as `offer_snapshot.verified_at` (ISO timestamp).
+  - The UI’s “Last checked” for a row is derived from the **current snapshot’s** `verified_at`.
+- **Source URL(s)**:
+  - Stored in `source.url`, linked to snapshots via `snapshot_source`.
+  - `source.source_type` should be extended/used to distinguish origins:
+    - `comparison_site` (or similar) for Moneyfacts/MoneySavingExpert pages
+    - `provider_page` for bank/building society product pages
+    - `other`/`fca_register` as needed
+
+Schema note (recommended small tweak, optional): update the allowed values comment for `source.source_type` to include `comparison_site`, but no structural change is required because it’s already a free-text field.
+
+### 5.6 Scheduler / background jobs (6-hour cadence)
+We want “agentic freshness” without coupling refresh to user requests.
+
+#### 5.6.1 Execution model (local-first)
+Choose one of these “boring” options (both work locally):
+- **External scheduler**: run `python -m backend.app.cli.refresh_rates` via cron/Windows Task Scheduler every 6 hours (+ a daily full refresh job).
+- **In-process scheduler**: run APScheduler (or similar) in a dedicated process started alongside the API (recommended only if you control deployment and avoid multi-worker duplication).
+
+#### 5.6.2 Job semantics
+- **6-hour incremental refresh**:
+  - Scrape monitored comparison pages for each category/term bucket.
+  - Upsert offers and write new snapshots where changes are detected.
+- **Daily full refresh**:
+  - Re-validate the active set, mark withdrawn/removed items, and ensure “last checked” updates even when rates are unchanged (optional).
+- **Idempotency & locking**:
+  - Ensure only one refresh runs at a time (process lock / DB lock row / file lock).
+  - If a job fails mid-run, partial progress is acceptable as long as the DB is never left inconsistent (snapshots are append-only; offer pointers update only after validation).
+
+#### 5.6.3 Minimal job status tracking (recommended)
+To support the admin UI, expose job state via a lightweight mechanism:
+- Minimal approach: log to disk + keep last-run timestamps in memory (quick but not queryable after restart).
+- Better approach (recommended): add a small `ingestion_job_run` table in SQLite:
+  - `job_run_id`, `job_type` (six_hour/daily/manual), `status` (queued/running/succeeded/failed), `started_at`, `finished_at`, `error_summary`
+  - This keeps job state queryable and survives restarts.
+
+### 5.7 Admin on-demand refresh (Frontend → FastAPI → job runner)
+#### 5.7.1 API endpoints
+Add admin endpoints (exact routing is flexible):
+- `POST /admin/refresh`:
+  - Enqueues (or starts) a **manual refresh** run.
+  - Returns `{ job_run_id, status }`.
+- `GET /admin/refresh/{job_run_id}`:
+  - Returns job status + timestamps + a short error summary (if failed).
+
+#### 5.7.2 Frontend flow
+- The React UI shows an **Admin-only** “Refresh rates now” button.
+- On click:
+  1. Call `POST /admin/refresh`.
+  2. Show immediate feedback (“Refresh started”) and poll `GET /admin/refresh/{job_run_id}` until terminal state.
+  3. On success, refetch the active table endpoints so updated “Last checked” timestamps appear.
+
+#### 5.7.3 Authorization (local-first)
+For MVP/local use, keep it simple:
+- Gate the admin control behind a simple config flag or shared secret header.
+- Ensure non-admin users cannot trigger refresh (even if they discover the endpoint).
 
 ## 6) Migration strategy
 For SQLite, simplest is:

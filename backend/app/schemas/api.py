@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+# api.py — Pydantic models that define the JSON shape returned by the backend API
+# These models help validate and document what the frontend can expect.
+
 from pydantic import BaseModel, Field
 
 
 class TableRow(BaseModel):
+    # One row in a rates table (Fixed Savings or Cash ISA).
     offer_id: int
     provider_name: str
     product_name: str
@@ -33,5 +37,6 @@ class TableRow(BaseModel):
 
 
 class TableResponse(BaseModel):
+    # Wrapper object so we can extend responses later (e.g., add pagination or metadata).
     items: list[TableRow]
 

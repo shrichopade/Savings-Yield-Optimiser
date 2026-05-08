@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-05-06T08:33:00Z
-last_updated: 2026-05-06T09:16:00Z
+last_updated: 2026-05-06T16:08:00Z
 project: Savings-Yield-Optimiser
 project_key: NOKEY
 tracking_system: file-system
@@ -52,4 +52,13 @@ development_status:
   1-7-filters-ui-api-wiring: done
   1-8-basic-styling-accessibility-pass: done
   epic-1-retrospective: optional
+
+  epic-2: done
+  2-1-firecrawl-integration-scraper-base: done
+  2-2-target-uk-site-parser-moneysavingexpert-or-moneyfacts: done
+  2-3-sqlite-upsert-pipeline-last-checked-and-sources: done
+  2-4-background-refresh-service-6-hour-and-daily: done
+  2-5-admin-refresh-endpoints-fastapi: done
+  2-6-frontend-admin-refresh-button: done
+  epic-2-retrospective: done
 

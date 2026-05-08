@@ -134,6 +134,21 @@ CREATE TABLE IF NOT EXISTS snapshot_source (
 );
 
 -- =========================
+-- Ingestion job runs (refresh history)
+-- =========================
+CREATE TABLE IF NOT EXISTS ingestion_job_run (
+  job_run_id             TEXT PRIMARY KEY,
+  job_type               TEXT NOT NULL,  -- 'scheduler'|'admin'
+  status                 TEXT NOT NULL,  -- 'running'|'succeeded'|'failed'
+  started_at             TEXT NOT NULL,
+  finished_at            TEXT,
+  error                  TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_job_run_started
+  ON ingestion_job_run(started_at DESC);
+
+-- =========================
 -- Schema versioning
 -- =========================
 CREATE TABLE IF NOT EXISTS schema_version (
